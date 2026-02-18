@@ -1,0 +1,7 @@
+streamlit==1.53.1
+pandas==2.3.3
+plotly==6.5.2
+fpdf2==2.8.5
+st-gsheets-connection==0.1.0
+google-auth==2.48.0
+openpyxl==3.2.0b1
