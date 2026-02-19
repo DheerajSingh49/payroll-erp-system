@@ -112,75 +112,126 @@ else:
     df = load_data(selected_month)
 
 
-    # --- PDF GENERATOR ---
+# --- EXACT PDF REPLICA GENERATOR (FIXED ENCODING) ---
+# --- EXACT PDF REPLICA GENERATOR ---
+   # --- DYNAMIC EXACT REPLICA GENERATOR ---
+# --- EXACT DYNAMIC REPLICA GENERATOR ---
+ # --- FINAL EXACT REPLICA GENERATOR ---
+   # --- FINAL DYNAMIC REPLICA WITH FALLBACK LOGO ---
     def generate_pdf(data):
         pdf = FPDF()
         pdf.add_page()
-        pdf.set_font("Helvetica", 'B', 16)
-        pdf.cell(190, 10, "SALARY PAYMENT SLIP", ln=True, align='C')
-        pdf.ln(10)
-        pdf.set_font("Helvetica", '', 10)
-        pdf.cell(45, 7, "Employee Name:", 0, 0);
-        pdf.set_font("Helvetica", 'B', 10);
-        pdf.cell(50, 7, f"{data['Employee Name']}", 0, 0)
-        pdf.set_font("Helvetica", '', 10);
-        pdf.cell(45, 7, "Employee ID:", 0, 0);
-        pdf.set_font("Helvetica", 'B', 10);
-        pdf.cell(50, 7, f"{data['E_Id']}", 0, 1)
-        pdf.set_font("Helvetica", '', 10);
-        pdf.cell(45, 7, "Department:", 0, 0);
-        pdf.set_font("Helvetica", 'B', 10);
-        pdf.cell(50, 7, f"{data['Department']}", 0, 0)
-        pdf.set_font("Helvetica", '', 10);
-        pdf.cell(45, 7, "Working Days:", 0, 0);
-        pdf.set_font("Helvetica", 'B', 10);
-        pdf.cell(50, 7, f"{int(data['TP'])}", 0, 1)
-        pdf.set_font("Helvetica", '', 10);
-        pdf.cell(45, 7, "Total Hours:", 0, 0);
-        pdf.set_font("Helvetica", 'B', 10);
-        pdf.cell(50, 7, f"{data['Total Working Hours']}", 0, 0)
-        pdf.set_font("Helvetica", '', 10);
-        pdf.cell(45, 7, "Payment Period:", 0, 0);
-        pdf.set_font("Helvetica", 'B', 10);
-        pdf.cell(50, 7, f"{selected_month}", 0, 1)
-        pdf.ln(5)
-        pdf.set_fill_color(230, 230, 230);
+        
+        # Helper to safely get data from sheet
+        def get_val(col_name):
+            return str(data[col_name]) if col_name in data and pd.notna(data[col_name]) else ""
+
+        # --- HEADER SECTION ---
+        # Fallback Text Logo (Top Left) - Matches the blue branding in screenshot
+        pdf.set_font("Helvetica", 'B', 18)
+        pdf.set_text_color(0, 162, 232) # Bright blue for "NOVANECTAR"
+        pdf.text(10, 18, "NOVANECTAR")
         pdf.set_font("Helvetica", 'B', 10)
-        pdf.cell(65, 10, "Earnings", 1, 0, 'C', True);
-        pdf.cell(30, 10, "Amount", 1, 0, 'C', True)
-        pdf.cell(65, 10, "Deductions", 1, 0, 'C', True);
-        pdf.cell(30, 10, "Amount", 1, 1, 'C', True)
-        pdf.set_font("Helvetica", '', 10)
-        pdf.cell(65, 8, "Basic Salary", 1, 0, 'L');
-        pdf.cell(30, 8, f"{data['Salary']:.2f}", 1, 0, 'R')
-        pdf.cell(65, 8, "Absent Deduction", 1, 0, 'L');
-        pdf.cell(30, 8, f"{data['Absent Deduction']:.2f}", 1, 1, 'R')
-        pdf.cell(65, 8, "Incentive Pay", 1, 0, 'L');
-        pdf.cell(30, 8, f"{data['Incentive Pay']:.2f}", 1, 0, 'R')
-        pdf.cell(65, 8, "Professional Tax", 1, 0, 'L');
-        pdf.cell(30, 8, f"{data['Professional Tax']:.2f}", 1, 1, 'R')
-        pdf.cell(65, 8, "Allowances", 1, 0, 'L');
-        pdf.cell(30, 8, f"{data['Allowances']:.2f}", 1, 0, 'R')
-        pdf.cell(65, 8, "Late Deduction", 1, 0, 'L');
-        pdf.cell(30, 8, f"{data['Late Deduction']:.2f}", 1, 1, 'R')
-        total_earn = data['Salary'] + data['Incentive Pay'] + data['Allowances']
-        pdf.set_font("Helvetica", 'B', 10);
-        pdf.set_fill_color(245, 245, 245)
-        pdf.cell(65, 8, "Total Earnings", 1, 0, 'L', True);
-        pdf.cell(30, 8, f"{total_earn:.2f}", 1, 0, 'R', True)
-        pdf.cell(65, 8, "Total Deductions", 1, 0, 'L', True);
-        pdf.cell(30, 8, f"{data['Total Deduction']:.2f}", 1, 1, 'R', True)
-        pdf.ln(5);
-        pdf.set_font("Helvetica", 'B', 12)
-        pdf.cell(160, 10, "NET PAYABLE:", 0, 0, 'R')
-        pdf.set_fill_color(220, 230, 255);
-        pdf.cell(30, 10, f"{data['Net Salary']:.2f}", 1, 1, 'C', True)
-        pdf.ln(20);
-        pdf.set_font("Helvetica", '', 10)
-        pdf.cell(95, 10, "__________________________", 0, 0, 'C');
-        pdf.cell(95, 10, "__________________________", 0, 1, 'C')
-        pdf.cell(95, 5, "Employee Signature", 0, 0, 'C');
-        pdf.cell(95, 5, "Employer Signature", 0, 1, 'C')
+        pdf.set_text_color(50, 50, 50) # Dark grey for "SERVICES PVT. LTD."
+        pdf.text(10, 23, "SERVICES PVT. LTD.")
+
+        # Month Box (Top Right)
+        pdf.set_draw_color(0, 0, 0)
+        pdf.set_text_color(0, 0, 0)
+        pdf.rect(140, 10, 50, 16) 
+        pdf.set_font("Helvetica", '', 9)
+        pdf.set_xy(140, 11)
+        pdf.cell(50, 5, "Pay Slip for the Month", ln=True, align='C')
+        pdf.set_font("Helvetica", 'B', 11)
+        pdf.set_x(140)
+        pdf.cell(50, 7, f"{selected_month} 2025", align='C')
+
+        # Contact and Address (Center)
+        pdf.set_xy(10, 30)
+        pdf.set_font("Helvetica", '', 9)
+        pdf.cell(190, 5, "- Info@novanectar.co.in      - +91 89798 91708", ln=True, align='C')
+        pdf.set_font("Helvetica", '', 8)
+        pdf.multi_cell(190, 4, "KHASRA NO.-1336/3/1, HARIPURAM, KANWALI GMS RD, Kanwali Road,\nDehradun, Dehradun- 248001, Uttarakhand", align='C')
+        pdf.ln(5)
+
+        # --- SUMMARY TABLES ---
+        pdf.set_fill_color(240, 240, 240) # Light grey headers
+        pdf.set_font("Helvetica", 'B', 9)
+        pdf.cell(95, 7, " EMPLOYEE SUMMARY", 1, 0, 'L', True)
+        pdf.cell(95, 7, " A/C SUMMARY", 1, 1, 'L', True)
+
+        # Table Rows - Maps existing sheet info, leaves others blank
+        pdf.set_font("Helvetica", '', 8)
+        fields = [
+            ("Emp ID", get_val('E_Id'), "PF A/C No", get_val('PF A/C No')),
+            ("Emp Name", get_val('Employee Name'), "UAN", get_val('UAN')),
+            ("Designation", get_val('Designation'), "Bank Name", get_val('Bank Name')),
+            ("Department", get_val('Department'), "A/C No", get_val('A/C No')),
+            ("Date of Joining", get_val('Date of Joining'), "IFSC", get_val('IFSC')),
+            ("Pan Card", get_val('Pan Card'), "", ""),
+            ("Gender", get_val('Gender'), "", "")
+        ]
+
+        for f1, v1, f2, v2 in fields:
+            pdf.cell(47.5, 7, f" {f1}", 1, 0); pdf.cell(47.5, 7, f"{v1} ", 1, 0, 'R')
+            pdf.cell(47.5, 7, f" {f2}", 1, 0); pdf.cell(47.5, 7, f"{v2} ", 1, 1, 'R')
+
+        pdf.ln(4)
+
+        # Working Days Table
+        pdf.cell(47.5, 7, " Total Working Days", 1, 0); pdf.cell(47.5, 7, f"{get_val('Total Working Days')} ", 1, 0, 'R')
+        pdf.cell(47.5, 7, " Leaves", 1, 0); pdf.cell(47.5, 7, f"{get_val('CL')} ", 1, 1, 'R')
+        pdf.cell(47.5, 7, " LOP Days", 1, 0); pdf.cell(47.5, 7, f"{get_val('TA')} ", 1, 0, 'R')
+        pdf.cell(47.5, 7, " Paid Days", 1, 0); pdf.cell(47.5, 7, f"{get_val('TP')} ", 1, 1, 'R')
+
+        pdf.ln(4)
+
+        # --- EARNINGS & DEDUCTIONS ---
+        pdf.cell(65, 7, " EARNINGS", 1, 0, 'L', True); pdf.cell(30, 7, "AMOUNT ", 1, 0, 'R', True)
+        pdf.cell(65, 7, " DEDUCTIONS", 1, 0, 'L', True); pdf.cell(30, 7, "AMOUNT ", 1, 1, 'R', True)
+        
+        pdf.set_font("Helvetica", '', 8)
+        rows = [
+            ("Basic Pay", get_val('Salary'), "Provident Fund", get_val('Provident Fund')),
+            ("House Rent Allowance", get_val('HRA'), "Professional Tax", get_val('Professional Tax')),
+            ("Special Allowance", get_val('Special Allowance'), "", ""),
+            ("Leave Travel", get_val('LTA'), "", ""),
+            ("Allowance", get_val('Allowances'), "", ""),
+            ("Differential Allowance", get_val('Differential Allowance'), "", ""),
+            ("Sodexo Encashment", get_val('Incentive Pay'), "", "")
+        ]
+
+        for e_n, e_a, d_n, d_a in rows:
+            pdf.cell(65, 7, f" {e_n}", 1, 0); pdf.cell(30, 7, f"{e_a} ", 1, 0, 'R')
+            pdf.cell(65, 7, f" {d_n}", 1, 0); pdf.cell(30, 7, f"{d_a} ", 1, 1, 'R')
+
+        # Totals calculation from Sheet
+        pdf.set_font("Helvetica", 'B', 8)
+        gross = (data['Salary'] if 'Salary' in data else 0) + (data['Incentive Pay'] if 'Incentive Pay' in data else 0) + (data['Allowances'] if 'Allowances' in data else 0)
+        pdf.cell(65, 7, " Gross Earnings", 1, 0); pdf.cell(30, 7, f"{gross:.0f} ", 1, 0, 'R')
+        pdf.cell(65, 7, " Total Deductions", 1, 0); pdf.cell(30, 7, f"{get_val('Total Deduction')} ", 1, 1, 'R')
+
+        # --- NET PAYABLE SECTION ---
+        pdf.ln(4)
+        pdf.set_fill_color(33, 63, 33) # Dark green box
+        pdf.set_text_color(255, 255, 255) # White text
+        pdf.set_font("Helvetica", 'B', 10)
+        net_salary = get_val('Net Salary')
+        pdf.cell(190, 10, f" TOTAL NET PAYABLE                                                                         {net_salary}", 1, 1, 'L', True)
+        
+        # Word Amount Box
+        pdf.set_text_color(0, 0, 0)
+        pdf.set_font("Helvetica", '', 9)
+        pdf.set_fill_color(255, 255, 255)
+        pdf.cell(190, 15, "", 1, 1) # Matches the large box in screenshot
+        pdf.set_y(pdf.get_y() - 10)
+        pdf.cell(185, 8, f"Amounts in Words: {get_val('Amount Words')}", 0, 1, 'R')
+
+        # Note Section
+        pdf.ln(10)
+        pdf.set_font("Helvetica", 'B', 9)
+        pdf.cell(190, 5, "Note:-", 0, 1)
+
         return pdf.output()
 
 
