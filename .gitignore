@@ -188,3 +188,6 @@ venv/
 
 # Ignore Python cache
 __pycache__/
+
+secrets.toml
+.streamlit/
