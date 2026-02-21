@@ -179,3 +179,12 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+# Ignore sensitive credential files
+*.json
+
+# Ignore virtual environments
+venv/
+.venv/
+
+# Ignore Python cache
+__pycache__/
