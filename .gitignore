@@ -191,3 +191,4 @@ __pycache__/
 
 secrets.toml
 .streamlit/
+secrets.toml
