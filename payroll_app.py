@@ -10,7 +10,7 @@ import time
 # --- APP CONFIG ---
 st.set_page_config(page_title="Payroll ERP System", layout="wide")
 
-SHEET_ID = "1bAPy07MVYIVAcTtAhgVVJAVBagoHtpbZDF5xIpNFX8w"
+SHEET_ID = "1UNh6W6FnqmM1FvuduwUHxGxRPy38049tNiWhh0Gbx6Y"
 sheet_url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/edit?usp=sharing"
 
 # --- INDIAN NUMBER TO WORDS LOGIC ---
@@ -43,11 +43,10 @@ def number_to_words_indian(number):
         return ""
 
 # --- UPDATED DATA LOADER WITH CACHE BUSTER ---
-@st.cache_data(ttl=5) # Reduced TTL for faster updates
+@st.cache_data(ttl=5) 
 def load_data(worksheet_name):
     try:
         encoded_name = worksheet_name.replace(" ", "%20")
-        # Added 'timestamp' to the URL to force Google to provide fresh data
         csv_url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={encoded_name}&t={int(time.time())}"
         
         response = requests.get(csv_url)
@@ -59,8 +58,8 @@ def load_data(worksheet_name):
 
         target_numeric = [
             "Salary", "Incentive Pay", "Allowances", "Professional Tax",
-            "Absent Deduction", "Late Deduction", "Total Deduction", "Net Salary",
-            "TP", "TA", "LA", "SL", "CL", "Total Working Hours", "Hours Deduction"
+            "Absent Deduction", "Total Deduction", "Net Salary",
+            "TP", "TA", "SL", "CL", "Total Working Hours", "Hours Deduction"
         ]
 
         for col in target_numeric:
@@ -72,7 +71,7 @@ def load_data(worksheet_name):
     except Exception:
         return pd.DataFrame()
 
-# --- PDF GENERATOR ---
+# --- PDF GENERATOR (FIXED) ---
 def generate_pdf(data, month_name):
     pdf = FPDF()
     pdf.add_page()
@@ -169,7 +168,9 @@ def generate_pdf(data, month_name):
     pdf.cell(185, 8, f"Amounts in Words: {words}", 0, 1, 'R')
     pdf.ln(10); pdf.set_font("Helvetica", 'B', 9)
     pdf.cell(190, 5, "Note:-", 0, 1)
-    return pdf.output()
+    
+    # CRITICAL FIX: Encode as latin-1 bytes to avoid TypeError
+    return pdf.output(dest='S').encode('latin-1')
 
 # --- AUTH STATE ---
 if 'logged_in' not in st.session_state:
@@ -199,7 +200,7 @@ if not st.session_state['logged_in']:
             adm_user = st.text_input("Username", key="adm_user")
             adm_pwd = st.text_input("Password", type="password", key="adm_pwd")
             if st.button("Admin Access", key="adm_btn"):
-                if adm_user == "admin" and adm_pwd == "admin123":
+                if adm_user == "Admin" and adm_pwd == "@admin123":
                     st.session_state.update({'logged_in': True, 'user_role': 'Admin'})
                     st.rerun()
                 else: st.error("Invalid Admin Credentials")
@@ -211,7 +212,7 @@ else:
             st.session_state.update({'logged_in': False, 'user_role': None, 'user_id': None})
             st.rerun()
         st.divider()
-        if st.button("🔄 Sync with Google Sheets"):
+        if st.button("Sync with Google Sheets"):
             st.cache_data.clear()
             st.toast("Fetching latest data...")
             st.rerun()
@@ -243,12 +244,19 @@ else:
                 st.dataframe(emp_rec)
                 v1, v2 = st.columns(2)
                 with v1:
-                    attn = pd.DataFrame({'Status': ['Present', 'Absent', 'Late', 'Sick', 'Casual'], 'Days': [emp_rec.iloc[0]['TP'], emp_rec.iloc[0]['TA'], emp_rec.iloc[0]['LA'], emp_rec.iloc[0]['SL'], emp_rec.iloc[0]['CL']]})
+                    attn = pd.DataFrame({'Status': ['Present', 'Absent', 'Sick', 'Casual'], 'Days': [emp_rec.iloc[0]['TP'], emp_rec.iloc[0]['TA'], emp_rec.iloc[0]['SL'], emp_rec.iloc[0]['CL']]})
                     st.plotly_chart(px.bar(attn, x='Status', y='Days', color='Status', title="Individual Attendance Summary"), use_container_width=True)
                 with v2:
                     st.plotly_chart(px.pie(names=["Basic Salary", "Incentive Pay", "Allowances"], values=[emp_rec.iloc[0]['Salary'], emp_rec.iloc[0]['Incentive Pay'], emp_rec.iloc[0]['Allowances']], title="Earnings Breakdown", hole=0.5), use_container_width=True)
-                pdf_bytes = generate_pdf(emp_rec.iloc[0], selected_month)
-                st.download_button(f"Download Payslip ({selected_month})", data=bytes(pdf_bytes), file_name=f"Payslip_{selected_name}_{selected_month}.pdf")
+                
+                # REPLACED BUTTON LOGIC
+                pdf_output = generate_pdf(emp_rec.iloc[0], selected_month)
+                st.download_button(
+                    label=f"Download Payslip ({selected_month})",
+                    data=pdf_output,
+                    file_name=f"Payslip_{selected_name}_{selected_month}.pdf",
+                    mime="application/pdf"
+                )
         else:
             user_row = df[df['E_Id'].astype(str) == st.session_state['user_id']]
             if user_row.empty:
@@ -264,9 +272,16 @@ else:
                 st.divider()
                 v1, v2 = st.columns(2)
                 with v1:
-                    my_attn = pd.DataFrame({'Status': ['Present', 'Absent', 'Late', 'Sick', 'Casual'], 'Days': [user_row.iloc[0]['TP'], user_row.iloc[0]['TA'], user_row.iloc[0]['LA'], user_row.iloc[0]['SL'], user_row.iloc[0]['CL']]})
+                    my_attn = pd.DataFrame({'Status': ['Present', 'Absent', 'Sick', 'Casual'], 'Days': [user_row.iloc[0]['TP'], user_row.iloc[0]['TA'], user_row.iloc[0]['SL'], user_row.iloc[0]['CL']]})
                     st.plotly_chart(px.bar(my_attn, x='Status', y='Days', title="My Attendance Performance", color='Status'), use_container_width=True)
                 with v2:
                     st.plotly_chart(px.pie(names=["Absent Deduction", "Net Salary", "Hours Deduction","Professional Tax"], values=[user_row.iloc[0]['Absent Deduction'], user_row.iloc[0]['Net Salary'], user_row.iloc[0]['Hours Deduction'], user_row.iloc[0]['Professional Tax']], title="My Deductions Breakdown", hole=0.5), use_container_width=True)
-                pdf_out = generate_pdf(user_row.iloc[0], selected_month)
-                st.download_button(f"Download {selected_month} Payslip (PDF)", data=bytes(pdf_out), file_name=f"Payslip_{selected_month}.pdf")
+                
+                # REPLACED BUTTON LOGIC
+                pdf_output = generate_pdf(user_row.iloc[0], selected_month)
+                st.download_button(
+                    label=f"Download {selected_month} Payslip (PDF)",
+                    data=pdf_output,
+                    file_name=f"Payslip_{selected_month}.pdf",
+                    mime="application/pdf"
+                )
